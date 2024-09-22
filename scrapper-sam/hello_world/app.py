@@ -1,42 +1,36 @@
 import json
-
-# import requests
+import yfinance
+import pandas as pd
 
 
 def lambda_handler(event, context):
-    """Sample pure Lambda function
+    request_ticker: str = 'AAPL'#request.GET.get('ticker')
+    period: str = '1d' # request.GET.get('p')
 
-    Parameters
-    ----------
-    event: dict, required
-        API Gateway Lambda Proxy Input Format
+    history_df = get_historical_prices(request_ticker, period)
 
-        Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
+    print(history_df)
 
-    context: object, required
-        Lambda Context runtime methods and attributes
+    if history_df.index.name == 'Date':
+        history_df = history_df.reset_index()
+    history_df['Date'] = pd.to_datetime(history_df['Date'])
+    history_df['Date'] = history_df['Date'].dt.strftime('%Y%m%d')
 
-        Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
+    key_value_map = history_df.set_index('Date')['Close'].to_dict()
 
-    Returns
-    ------
-    API Gateway Lambda Proxy Output Format: dict
+    json_response = key_value_map#json.dumps(key_value_map, indent=4)
 
-        Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-    """
+    return json_response #json.dumps(json_response, safe=False)
 
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
+def get_historical_prices(ticker: str = None, period: str = ''):
 
-    #     raise e
+    possibleVals = ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
 
-    return {
-        "statusCode": 200,
-        "body": json.dumps({
-            "message": "hello world",
-            # "location": ip.text.replace("\n", "")
-        }),
-    }
+    if ticker == None: 
+        return HttpResponse('No ticker provided!')
+    
+    if period not in possibleVals:
+        period = "5y"
+
+    ticker = yfinance.Ticker(ticker)
+    return ticker.history(period=period, interval= '1mo')
