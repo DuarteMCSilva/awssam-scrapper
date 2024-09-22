@@ -1,36 +1,42 @@
-import json
 import yfinance
 import pandas as pd
 
 
-def lambda_handler(event, context):
-    request_ticker: str = 'AAPL'#request.GET.get('ticker')
-    period: str = '1d' # request.GET.get('p')
+def handle_get_prices_request(event, context):
+    request_ticker: str = 'AAPL' #request.GET.get('ticker')
+    period: str = '1y' # request.GET.get('p')
+    interval: str = '1mo'
 
-    history_df = get_historical_prices(request_ticker, period)
+    historical_prices = process_historical_prices_by_date(request_ticker, period, interval)
 
-    print(history_df)
+    close_prices = historical_prices.set_index('Date')['Close'].to_dict()
+
+    return close_prices
+
+def process_historical_prices_by_date(ticker, period, interval):
+    history_df = fetch_historical_prices_from_api(ticker, period, interval)
 
     if history_df.index.name == 'Date':
         history_df = history_df.reset_index()
     history_df['Date'] = pd.to_datetime(history_df['Date'])
     history_df['Date'] = history_df['Date'].dt.strftime('%Y%m%d')
+    return history_df
 
-    key_value_map = history_df.set_index('Date')['Close'].to_dict()
+def fetch_historical_prices_from_api(ticker: str = None, period_input: str = '', interval: str = '1mo'):
+    if ticker is None:
+        return 'No ticker provided!'
 
-    json_response = key_value_map#json.dumps(key_value_map, indent=4)
-
-    return json_response #json.dumps(json_response, safe=False)
-
-def get_historical_prices(ticker: str = None, period: str = ''):
-
-    possibleVals = ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
-
-    if ticker == None: 
-        return HttpResponse('No ticker provided!')
-    
-    if period not in possibleVals:
-        period = "5y"
+    period = choose_valid_period(period_input)
 
     ticker = yfinance.Ticker(ticker)
-    return ticker.history(period=period, interval= '1mo')
+    return ticker.history(period=period, interval=interval)
+
+def choose_valid_period(period_input: str = ''):
+    possible_vals = ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
+
+    if period_input not in possible_vals:
+        period = '5y'
+    else:
+        period = period_input
+
+    return period

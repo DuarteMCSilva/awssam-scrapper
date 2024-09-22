@@ -62,9 +62,9 @@ def apigw_event():
     }
 
 
-def test_lambda_handler(apigw_event):
+def test_handle_get_prices_request(apigw_event):
 
-    ret = app.lambda_handler(apigw_event, "")
+    ret = app.handle_get_prices_request(apigw_event, "")
     data = json.loads(ret["body"])
 
     assert ret["statusCode"] == 200
