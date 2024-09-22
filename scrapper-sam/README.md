@@ -2,15 +2,27 @@
 
 ## My notes:
 
+### Dependencies
+See default notes
 
+### Running & Deploying:
 
+```
+sam build
+```
+#### Test locally:
 ```
 sam build
 
 sam local invoke HelloWorldFunction --event events/event.json
 ```
 
+#### Run server locally:
+```
+sam build
 
+sam local start-api
+```
 
 
 
