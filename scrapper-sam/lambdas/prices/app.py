@@ -15,7 +15,9 @@ def handle_get_prices_request(event, context):
         "statusCode": 200,
         "body": json.dumps(close_prices),
         "headers": {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            'Access-Control-Allow-Origin': 'http://localhost:4200',
+            'Access-Control-Allow-Methods': 'POST, GET'
         }
     }
 
