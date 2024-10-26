@@ -1,6 +1,5 @@
 import yfinance
 import pandas as pd
-import json
 
 
 def handle_get_financials(event, context):
@@ -32,25 +31,34 @@ def getFinancialsByDate(ticker):
     cash_flow = ticker.cash_flow
     income_statement = ticker.income_stmt
 
-    dates = income_statement.columns
+    dates = income_statement.columns.tolist()
+    dates.reverse()
 
     momentum_metrics = {}
+    data = {}
 
     for date in dates:
         income_st = income_statement[date]
         cash_flow_st = cash_flow[date]
 
         data = {
-            "revenue": income_st.loc['Total Revenue'],
-            "grossProfit": income_st.loc['Gross Profit'],
-            "netIncome": income_st.loc['Gross Profit'],
-            "fcf": cash_flow_st.loc['Free Cash Flow']
+            "revenue": getValuesWithRelativeChange(income_st.loc['Total Revenue'], data.get('revenue')),
+            "grossProfit": getValuesWithRelativeChange(income_st.loc['Gross Profit'], data.get('grossProfit')),
+            "netIncome": getValuesWithRelativeChange(income_st.loc['Net Income'], data.get('netIncome')),
+            "fcf": getValuesWithRelativeChange(cash_flow_st.loc['Free Cash Flow'], data.get('fcf'))
         }
 
         format_date = date.strftime('%Y')
         momentum_metrics[format_date] = data
     
     return momentum_metrics
+
+def getValuesWithRelativeChange(value, previous):
+    try:
+        previous_val = previous.get('value')
+        return { "value": value, "change": value/previous_val }
+    except:
+        return { "value": value }
 
 def getStationaryFinancials(ticker):
     last_balance_sheet = ticker.quarterly_balance_sheet
