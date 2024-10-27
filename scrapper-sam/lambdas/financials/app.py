@@ -1,5 +1,5 @@
 import yfinance
-import pandas as pd
+import json
 
 
 def handle_get_financials(event, context):
@@ -9,6 +9,7 @@ def handle_get_financials(event, context):
 
     financials = {
         "ticker": request_ticker,
+        "sector": ticker.info['sector'],
         "currency": ticker.fast_info['currency'],
         "marketCap": ticker.fast_info['marketCap'],
         "shares": ticker.fast_info['shares'],
@@ -19,7 +20,7 @@ def handle_get_financials(event, context):
 
     return {
         "statusCode": 200,
-        "body": financials,
+        "body": json.dumps(financials),
         "headers": {
             "Content-Type": "application/json",
             'Access-Control-Allow-Origin': 'http://localhost:4200',
@@ -34,22 +35,24 @@ def getFinancialsByDate(ticker):
     dates = income_statement.columns.tolist()
     dates.reverse()
 
-    momentum_metrics = {}
+    momentum_metrics = []
     data = {}
 
     for date in dates:
         income_st = income_statement[date]
         cash_flow_st = cash_flow[date]
+        format_date = date.strftime('%Y')
+
 
         data = {
+            "period": format_date,
             "revenue": getValuesWithRelativeChange(income_st.loc['Total Revenue'], data.get('revenue')),
             "grossProfit": getValuesWithRelativeChange(income_st.loc['Gross Profit'], data.get('grossProfit')),
             "netIncome": getValuesWithRelativeChange(income_st.loc['Net Income'], data.get('netIncome')),
             "fcf": getValuesWithRelativeChange(cash_flow_st.loc['Free Cash Flow'], data.get('fcf'))
         }
 
-        format_date = date.strftime('%Y')
-        momentum_metrics[format_date] = data
+        momentum_metrics.append(data)
     
     return momentum_metrics
 
